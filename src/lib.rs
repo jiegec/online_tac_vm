@@ -5,7 +5,6 @@ mod runner;
 use std::cell::RefCell;
 use std::io::{self, Cursor, Write};
 use std::rc::Rc;
-use stdweb::web::Date;
 use tacvm;
 use yew::html::InputData;
 use yew::services::ConsoleService;
@@ -101,7 +100,7 @@ impl Component for Model {
         );
         match result {
             Ok(()) => {
-                self.status = format!("Running code success");
+                self.status = format!("Running code succeeded");
                 match String::from_utf8(vm_output_buffer.data()) {
                     Ok(output) => {
                         self.stdout = output;
