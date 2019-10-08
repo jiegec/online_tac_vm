@@ -17,10 +17,14 @@ pub struct Model {
     stdout: String,
     stderr: String,
     status: String,
+    inst_limit: u32,
+    stack_limit: u32,
 }
 
 pub enum Msg {
-    Input(InputData),
+    InputCode(InputData),
+    InputInst(InputData),
+    InputStack(InputData),
 }
 
 #[derive(Debug, Clone)]
@@ -63,13 +67,21 @@ impl Component for Model {
             stdout: String::new(),
             stderr: String::new(),
             status: String::new(),
+            inst_limit: 1000,
+            stack_limit: 1000,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Input(input) => {
+            Msg::InputCode(input) => {
                 self.code = input.value;
+            }
+            Msg::InputInst(input) => {
+                self.inst_limit = input.value.parse().unwrap_or(1000);
+            }
+            Msg::InputStack(input) => {
+                self.stack_limit = input.value.parse().unwrap_or(1000);
             }
         }
         let vm_input = Box::new(Cursor::new(Vec::new()));
@@ -79,8 +91,8 @@ impl Component for Model {
         let info_output = Box::new(info_output_buffer.clone());
         let result = tacvm::work(
             &self.code,
-            1000,
-            1000,
+            self.inst_limit,
+            self.stack_limit,
             true,
             true,
             vm_input,
@@ -90,7 +102,6 @@ impl Component for Model {
         match result {
             Ok(()) => {
                 self.status = format!("Running code success");
-                self.console.log("success");
                 match String::from_utf8(vm_output_buffer.data()) {
                     Ok(output) => {
                         self.stdout = output;
@@ -120,10 +131,22 @@ impl Renderable<Model> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div>
-                <textarea oninput=|content| Msg::Input(content)></textarea>
-                <p>{ &self.stdout } </p>
-                <p>{ &self.stderr } </p>
-                <p>{ &self.status } </p>
+                <h1> { "Online Tac VM" }</h1>
+                <h3> { "VM Input" } </h3>
+                <form>
+                    <label for="code"> { "Code" }</label>
+                    <textarea style="height: 50vh" name="code" oninput=|content| Msg::InputCode(content)></textarea>
+                    <label for="inst"> { "Instruction Limit" }</label>
+                    <input name="inst" oninput=|content| Msg::InputInst(content)></input>
+                    <label for="stack"> { "Stack Limit" }</label>
+                    <input name="stack" oninput=|content| Msg::InputStack(content)></input>
+                </form>
+                <h3> { "VM Output" } </h3>
+                <pre>{ &self.status } </pre>
+                <h3> { "Standard Output" } </h3>
+                <pre>{ &self.stdout } </pre>
+                <h3> { "Standard Error" } </h3>
+                <pre>{ &self.stderr } </pre>
             </div>
         }
     }
