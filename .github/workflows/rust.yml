@@ -6,11 +6,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+
+    container:
+      image: tomaka/cargo-web:latest
     
     steps:
     - uses: actions/checkout@v1
-    - name: Install cargo-web
-      run: cargo install cargo-web
     - name: Build
       run: cargo deploy --release
     - name: Deploy
