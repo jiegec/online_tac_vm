@@ -1,0 +1,12 @@
+[package]
+name = "online_tac_vm"
+version = "0.1.0"
+authors = ["Jiajie Chen <noc@jiegec.ac.cn>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stdweb = "0.4.19"
+yew = "0.9.0"
+tacvm = { git = "https://github.com/MashPlant/tacvm.git" }
