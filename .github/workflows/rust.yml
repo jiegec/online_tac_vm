@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Build
-      run: cargo deploy --release
+      run: cargo web deploy --release
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@2.0.2
       env:
