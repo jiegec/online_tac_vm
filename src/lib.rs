@@ -1,12 +1,10 @@
 #![recursion_limit = "256"]
 
+mod common;
 mod runner;
 
-use std::cell::RefCell;
-use std::io::{self, Cursor, Write};
-use std::rc::Rc;
-use tacvm;
-use yew::html::InputData;
+use common::{Msg, Request};
+use yew::agent::{Bridge, Bridged};
 use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
@@ -14,6 +12,7 @@ const LIMIT: u32 = 1000;
 
 pub struct Model {
     console: ConsoleService,
+    runner: Box<dyn Bridge<runner::Runner>>,
     code: String,
     stdout: String,
     stderr: String,
@@ -22,48 +21,15 @@ pub struct Model {
     stack_limit: u32,
 }
 
-pub enum Msg {
-    InputCode(InputData),
-    InputInst(InputData),
-    InputStack(InputData),
-}
-
-#[derive(Debug, Clone)]
-struct OutputBuffer {
-    buffer: Rc<RefCell<Vec<u8>>>,
-}
-
-impl OutputBuffer {
-    fn new() -> Self {
-        OutputBuffer {
-            buffer: Rc::new(RefCell::new(Vec::new())),
-        }
-    }
-
-    fn data(&self) -> Vec<u8> {
-        self.buffer.borrow().clone()
-    }
-}
-
-impl Write for OutputBuffer {
-    fn write(&mut self, data: &[u8]) -> io::Result<usize> {
-        let mut buffer = self.buffer.borrow_mut();
-        buffer.extend_from_slice(data);
-        Ok(data.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
 impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_: Self::Properties, mut link: ComponentLink<Self>) -> Self {
+        let callback = link.send_back(|resp| Msg::RunnerResp(resp));
         Model {
             console: ConsoleService::new(),
+            runner: runner::Runner::bridge(callback),
             code: String::new(),
             stdout: String::new(),
             stderr: String::new(),
@@ -74,55 +40,34 @@ impl Component for Model {
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
+        let should_run = match msg {
             Msg::InputCode(input) => {
                 self.code = input.value;
+                true
             }
             Msg::InputInst(input) => {
                 self.inst_limit = input.value.parse().unwrap_or(LIMIT);
+                true
             }
             Msg::InputStack(input) => {
                 self.stack_limit = input.value.parse().unwrap_or(LIMIT);
+                true
             }
-        }
-        let vm_input = Box::new(Cursor::new(Vec::new()));
-        let vm_output_buffer = OutputBuffer::new();
-        let vm_output = Box::new(vm_output_buffer.clone());
-        let info_output_buffer = OutputBuffer::new();
-        let info_output = Box::new(info_output_buffer.clone());
-        let result = tacvm::work(
-            &self.code,
-            self.inst_limit,
-            self.stack_limit,
-            true,
-            true,
-            vm_input,
-            vm_output,
-            info_output,
-        );
-        match result {
-            Ok(()) => {
-                self.status = format!("Running code succeeded");
-                match String::from_utf8(vm_output_buffer.data()) {
-                    Ok(output) => {
-                        self.stdout = output;
-                    }
-                    Err(err) => {
-                        self.stdout = format!("{:?}", err);
-                    }
-                };
-                match String::from_utf8(info_output_buffer.data()) {
-                    Ok(output) => {
-                        self.stderr = output;
-                    }
-                    Err(err) => {
-                        self.stderr = format!("{:?}", err);
-                    }
-                };
+            Msg::RunnerResp(resp) => {
+                self.stdout = resp.stdout;
+                self.stderr = resp.stderr;
+                self.status = resp.status;
+                false
             }
-            Err(err) => {
-                self.status = format!("Running code failed with {:?}", err);
-            }
+        };
+
+        if should_run {
+            self.status = format!("Running...");
+            self.runner.send(Request {
+                code: self.code.clone(),
+                inst_limit: self.inst_limit,
+                stack_limit: self.stack_limit,
+            });
         }
         true
     }
