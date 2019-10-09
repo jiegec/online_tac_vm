@@ -16,9 +16,9 @@ jobs:
     - name: Build worker
       run: cargo web build --bin worker --release
     - name: Copy js files
-      run: cp -rf target/wasm*/release/*.js static
+      run: cp --remove-destination target/wasm*/release/*.js static
     - name: Copy wasm files
-      run: cp -rf target/wasm*/release/*.wasm static
+      run: cp --remove-destination target/wasm*/release/*.wasm static
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@2.0.2
       env:
