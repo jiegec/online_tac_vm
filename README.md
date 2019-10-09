@@ -6,11 +6,15 @@ Run TAC online. Based on MashPlant/tacvm. Using yew for frontend Rust framework.
 
 ```
 cargo install cargo-web
-cargo web start
+cargo web build --bin main
+cargo web build --bin worker
+cd static
+caddy
 ```
 
 ## How to deploy
 
 ```
-cargo web deploy --release
+cargo web build --bin main --release
+cargo web build --bin worker --release
 ```

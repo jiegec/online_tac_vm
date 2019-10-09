@@ -4,13 +4,14 @@ use std::io::{self, Cursor, Write};
 use std::rc::Rc;
 use tacvm;
 use yew::worker::*;
+use yew::agent::Threaded;
 
 pub struct Runner {
     link: AgentLink<Runner>,
 }
 
 impl Agent for Runner {
-    type Reach = Context;
+    type Reach = Public;
     type Message = Msg;
     type Input = Request;
     type Output = Response;
@@ -61,6 +62,10 @@ impl Agent for Runner {
                 status,
             },
         );
+    }
+
+    fn name_of_resource() -> &'static str {
+        "worker.js"
     }
 }
 

@@ -1,7 +1,7 @@
 #![recursion_limit = "256"]
 
 mod common;
-mod runner;
+pub mod runner;
 
 use common::{Msg, Request};
 use yew::agent::{Bridge, Bridged};
