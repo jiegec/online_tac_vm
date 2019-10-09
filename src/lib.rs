@@ -10,6 +10,8 @@ use yew::html::InputData;
 use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 
+const LIMIT: u32 = 1000;
+
 pub struct Model {
     console: ConsoleService,
     code: String,
@@ -66,8 +68,8 @@ impl Component for Model {
             stdout: String::new(),
             stderr: String::new(),
             status: String::new(),
-            inst_limit: 1000,
-            stack_limit: 1000,
+            inst_limit: LIMIT,
+            stack_limit: LIMIT,
         }
     }
 
@@ -77,10 +79,10 @@ impl Component for Model {
                 self.code = input.value;
             }
             Msg::InputInst(input) => {
-                self.inst_limit = input.value.parse().unwrap_or(1000);
+                self.inst_limit = input.value.parse().unwrap_or(LIMIT);
             }
             Msg::InputStack(input) => {
-                self.stack_limit = input.value.parse().unwrap_or(1000);
+                self.stack_limit = input.value.parse().unwrap_or(LIMIT);
             }
         }
         let vm_input = Box::new(Cursor::new(Vec::new()));
@@ -136,9 +138,9 @@ impl Renderable<Model> for Model {
                     <label for="code"> { "Code" }</label>
                     <textarea style="height: 50vh" name="code" oninput=|content| Msg::InputCode(content)></textarea>
                     <label for="inst"> { "Instruction Limit" }</label>
-                    <input name="inst" oninput=|content| Msg::InputInst(content)></input>
+                    <input name="inst" placeholder=LIMIT.to_string() oninput=|content| Msg::InputInst(content)></input>
                     <label for="stack"> { "Stack Limit" }</label>
-                    <input name="stack" oninput=|content| Msg::InputStack(content)></input>
+                    <input name="stack" placeholder=LIMIT.to_string() oninput=|content| Msg::InputStack(content)></input>
                 </form>
                 <h3> { "VM Output" } </h3>
                 <pre>{ &self.status } </pre>
