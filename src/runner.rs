@@ -4,7 +4,6 @@ use std::io::{self, Cursor, Write};
 use std::rc::Rc;
 use tacvm;
 use yew::worker::*;
-use yew::agent::Threaded;
 
 pub struct Runner {
     link: AgentLink<Runner>,

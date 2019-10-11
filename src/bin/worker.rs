@@ -1,5 +1,5 @@
-use yew::agent::Threaded;
 use online_tac_vm::runner;
+use yew::agent::Threaded;
 
 fn main() {
     yew::initialize();

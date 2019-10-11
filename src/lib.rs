@@ -4,6 +4,7 @@ mod common;
 pub mod runner;
 
 use common::{Msg, Request};
+use stdweb::{js, web::window};
 use yew::agent::{Bridge, Bridged};
 use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
@@ -27,10 +28,29 @@ impl Component for Model {
 
     fn create(_: Self::Properties, mut link: ComponentLink<Self>) -> Self {
         let callback = link.send_back(|resp| Msg::RunnerResp(resp));
+        let location = window().location();
+        let code = location
+            .and_then(|loc| {
+                loc.hash().ok().and_then(|hash| {
+                    (js! {
+                        return atob(@{&hash[1..]});
+                    })
+                    .as_str()
+                    .map(|s| s.to_owned())
+                })
+            })
+            .unwrap_or(String::new());
+
+        let mut runner = runner::Runner::bridge(callback);
+        runner.send(Request {
+            code: code.clone(),
+            inst_limit: LIMIT,
+            stack_limit: LIMIT,
+        });
         Model {
             console: ConsoleService::new(),
-            runner: runner::Runner::bridge(callback),
-            code: String::new(),
+            runner,
+            code,
             stdout: String::new(),
             stderr: String::new(),
             status: String::new(),
@@ -81,7 +101,7 @@ impl Renderable<Model> for Model {
                 <h3> { "VM Input" } </h3>
                 <form>
                     <label for="code"> { "Code" }</label>
-                    <textarea style="height: 50vh" name="code" oninput=|content| Msg::InputCode(content)></textarea>
+                    <textarea style="height: 50vh" name="code" oninput=|content| Msg::InputCode(content)> { &self.code } </textarea>
                     <label for="inst"> { "Instruction Limit" }</label>
                     <input name="inst" placeholder=LIMIT.to_string() oninput=|content| Msg::InputInst(content)></input>
                     <label for="stack"> { "Stack Limit" }</label>
