@@ -32,11 +32,15 @@ impl Component for Model {
         let code = location
             .and_then(|loc| {
                 loc.hash().ok().and_then(|hash| {
-                    (js! {
-                        return atob(@{&hash[1..]});
-                    })
-                    .as_str()
-                    .map(|s| s.to_owned())
+                    if hash.len() > 0 {
+                        (js! {
+                            return atob(@{&hash[1..]});
+                        })
+                        .as_str()
+                        .map(|s| s.to_owned())
+                    } else {
+                        None
+                    }
                 })
             })
             .unwrap_or(String::new());
